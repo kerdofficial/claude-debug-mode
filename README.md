@@ -1,10 +1,8 @@
-# Claude Debug Mode
+# Claude Debug Mode Plugin
 
 A hypothesis-based debugging skill for Claude Code, inspired by Cursor's Debug Mode. Uses runtime evidence and systematic hypothesis testing to identify and fix bugs.
 
 ## Installation
-
-### From GitHub (recommended)
 
 ```bash
 /plugin marketplace add kerdofficial/claude-debug-mode
@@ -13,22 +11,15 @@ A hypothesis-based debugging skill for Claude Code, inspired by Cursor's Debug M
 
 ## How It Works
 
-This skill implements a systematic debugging methodology:
+When you ask Claude to debug your code, it will:
 
-1. **Hypothesis Generation** - Generate 3-5 specific hypotheses about the bug
-2. **Code Instrumentation** - Add targeted logging tied to each hypothesis
-3. **Reproduction** - User triggers the bug to collect runtime data
-4. **Log Analysis** - Evaluate hypotheses as CONFIRMED/REJECTED/INCONCLUSIVE
-5. **Targeted Fix** - Apply minimal fix based on confirmed root cause
-6. **Verification** - Re-run with post-fix logging to prove the fix works
-7. **Cleanup** - Remove instrumentation after verified success
-
-## Key Principles
-
-- **NEVER** fix code without runtime evidence
-- **NEVER** remove instrumentation before fix is verified
-- **ALWAYS** generate 3-5 hypotheses before instrumenting
-- **ALWAYS** use `#region agent log` markers for easy cleanup
+1. **Think of possible causes** - Generate several hypotheses about what might be wrong
+2. **Add logging** - Insert temporary logs in your code to test each hypothesis
+3. **Ask you to run it** - You reproduce the bug while logs collect data
+4. **Analyze the evidence** - Claude reads the logs and identifies the actual cause
+5. **Fix it** - Apply a targeted fix based on real data
+6. **Verify** - You test again to confirm it works
+7. **Clean up** - Remove all the temporary logging code
 
 ## Usage
 
@@ -39,89 +30,32 @@ Simply ask Claude Code to debug something:
 - "Why isn't this working?"
 - "Find this bug in the authentication flow"
 
-Claude will automatically use the hypothesis-based methodology.
-
-## Log Format
-
-Logs are stored in NDJSON format at `.claude-logs/debug.ndjson`:
-
-```json
-{
-  "id": "log_1733456789_abc1",
-  "timestamp": 1733456789000,
-  "location": "file.js:15",
-  "message": "Function entry",
-  "data": { "param": "value" },
-  "sessionId": "debug-session",
-  "runId": "initial",
-  "hypothesisId": "A"
-}
-```
-
-## Multi-Language Support
-
-| Language | Logging Method | Template |
-|----------|---------------|----------|
-| JavaScript/TypeScript | HTTP POST to local server | `fetch('http://127.0.0.1:3947/debug', ...)` |
-| Python | File append | `with open('.claude-logs/debug.ndjson', 'a')` |
-| Go | File append with mutex | Thread-safe file write |
-| Rust | File append with mutex | Thread-safe file write |
-| Bash | Echo to file | `echo "{...}" >> .claude-logs/debug.ndjson` |
-
-See `skills/debug-mode/references/instrumentation-templates.md` for full templates.
-
-## Debug Server
-
-For JavaScript/TypeScript projects, a debug server is included:
+or just simply use the `/debug-mode` command and describe the bug, for example:
 
 ```bash
-# Start server
-node scripts/debug-server.js 3947
-
-# Endpoints
-POST /debug  - Receive debug logs
-GET  /health - Health check
-GET  /logs   - Retrieve all logs
-POST /clear  - Clear log file
+/debug-mode We have a bug in the inventory management system. When we try to reorder an item, it returns the wrong quantity.
 ```
 
-## Hypothesis Evaluation
+## License
 
-After reproduction, Claude evaluates each hypothesis:
+MIT License
 
-| Status | Meaning |
-|--------|---------|
-| **CONFIRMED** | Logs prove this is the root cause |
-| **REJECTED** | Logs prove this is NOT the cause |
-| **INCONCLUSIVE** | Need more instrumentation |
+Copyright (c) 2026 Kerekes Dániel
 
-Example output:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-```
-## Hypothesis Evaluation
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-| Hypothesis | Status | Evidence |
-|------------|--------|----------|
-| A: Wrong param types | REJECTED | Log #1-3: All params are numbers |
-| B: a===0 returns undefined | CONFIRMED | Log #5-6: Returns undefined when a===0 |
-| C: Calculation error | REJECTED | Log #4: 5+3=8 is correct |
-
-**Root Cause:** Hypothesis B confirmed.
-```
-
-## Directory Structure
-
-```
-claude-debug/
-├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
-├── skills/
-│   └── debug-mode/
-│       ├── SKILL.md          # Main skill (loaded on trigger)
-│       └── references/
-│           ├── instrumentation-templates.md  # Language templates
-│           └── hypothesis-workflow.md        # Detailed methodology
-├── scripts/
-│   └── debug-server.js       # HTTP debug server
-└── README.md
-```
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
