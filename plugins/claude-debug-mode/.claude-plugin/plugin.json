@@ -1,6 +1,6 @@
 {
   "name": "claude-debug-mode",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Hypothesis-based debugging with runtime evidence",
   "skills": "./skills/"
 }

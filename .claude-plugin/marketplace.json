@@ -8,7 +8,7 @@
     {
       "name": "claude-debug-mode",
       "description": "Hypothesis-based debugging with runtime evidence - systematic bug identification and fixing",
-      "version": "1.0.0",
+      "version": "1.0.2",
       "source": "./plugins/claude-debug-mode",
       "author": {
         "name": "KerD"

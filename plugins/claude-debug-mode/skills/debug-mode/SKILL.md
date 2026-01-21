@@ -32,7 +32,7 @@ Each hypothesis must be **testable** via logs.
 
 Create debug infrastructure and instrument the code.
 
-**Step 1: Create debug server** (for JS/TS projects):
+**Step 1: Create and auto-start debug server** (for JS/TS projects):
 Write to `.claude-logs/server.js`:
 
 ```javascript
@@ -41,17 +41,27 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 3947;
-const LOG_FILE = path.join('.claude-logs', 'debug.ndjson');
+const LOG_DIR = '.claude-logs';
+const LOG_FILE = path.join(LOG_DIR, 'debug.ndjson');
 
-if (!fs.existsSync('.claude-logs')) fs.mkdirSync('.claude-logs', { recursive: true });
+// Auto-create directory and empty log file on startup
+if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+fs.writeFileSync(LOG_FILE, '');
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   if (req.url === '/health') { res.writeHead(200); res.end('ok'); return; }
+
+  // Clear logs endpoint
+  if (req.url === '/clear' && req.method === 'POST') {
+    fs.writeFileSync(LOG_FILE, '');
+    res.writeHead(200); res.end('cleared');
+    return;
+  }
 
   if (req.url === '/debug' && req.method === 'POST') {
     let body = '';
@@ -73,9 +83,15 @@ server.listen(PORT, () => console.log(`Debug server running on port ${PORT}`));
 process.on('SIGINT', () => { server.close(); process.exit(0); });
 ```
 
-Start it: `node .claude-logs/server.js &`
+**Step 2: Start server in background automatically:**
+After writing the server file, start it in the background using Bash with `run_in_background: true`:
+```bash
+node .claude-logs/server.js
+```
 
-**Step 2: Instrument code** with hypothesis-tagged logs.
+**IMPORTANT:** The agent MUST start the server automatically before asking the user to reproduce. Never ask the user to start the server manually.
+
+**Step 3: Instrument code** with hypothesis-tagged logs.
 
 Use `// #region agent log` markers for easy cleanup:
 
@@ -110,7 +126,7 @@ For non-JS languages, see `${CLAUDE_PLUGIN_ROOT}/skills/debug-mode/references/in
 ### Phase 3: Reproduction
 
 Tell the user:
-> "I've added debug instrumentation. Please reproduce the issue now, then let me know when done."
+> "I've added debug instrumentation and started the debug server. Please reproduce the issue now, then let me know when done."
 
 Wait for user confirmation before proceeding.
 
@@ -143,7 +159,10 @@ Present findings in table format:
 If all hypotheses are INCONCLUSIVE:
 1. Generate 3-5 new hypotheses based on log insights
 2. Add more targeted instrumentation
-3. Request reproduction again
+3. **Clear logs before next reproduction:** `curl -X POST http://127.0.0.1:3947/clear`
+4. Request reproduction again
+
+**IMPORTANT:** Always clear logs before requesting a new reproduction to avoid re-reading old data and save context.
 
 ### Phase 5: Fix Application
 
@@ -157,12 +176,14 @@ Apply the fix while preserving debug instrumentation.
 
 ### Phase 6: Verification
 
-Tell the user:
+**Before asking user to verify:**
+1. Clear logs: `curl -X POST http://127.0.0.1:3947/clear`
+
+Then tell the user:
 > "Fix applied. Please reproduce the original scenario to verify the fix works."
 
 Compare logs:
-- `runId: "initial"` - pre-fix behavior
-- `runId: "post-fix"` - post-fix behavior
+- Only `runId: "post-fix"` logs will be present (fresh run)
 
 Verify the confirmed hypothesis no longer shows buggy behavior.
 
@@ -170,7 +191,7 @@ Verify the confirmed hypothesis no longer shows buggy behavior.
 
 **Only after user confirms fix works:**
 
-1. Remove all `// #region agent log` blocks
+1. Remove all `// #region agent log` blocks from code
 2. Stop debug server: `pkill -f ".claude-logs/server.js"`
 3. Remove debug directory: `rm -rf .claude-logs/`
 
@@ -182,6 +203,8 @@ Verify the confirmed hypothesis no longer shows buggy behavior.
 4. **ALWAYS** tag logs with `hypothesisId`
 5. **ALWAYS** wait for user to reproduce before analyzing
 6. **ALWAYS** use `#region agent log` markers
+7. **ALWAYS** start debug server automatically (never ask user)
+8. **ALWAYS** clear logs before each new reproduction request
 
 ## Log Schema
 
@@ -203,9 +226,9 @@ Verify the confirmed hypothesis no longer shows buggy behavior.
 | Phase | Action | Output |
 |-------|--------|--------|
 | 1 | Generate hypotheses | 3-5 testable hypotheses |
-| 2 | Instrument code | Logs at critical points |
+| 2 | Instrument code + auto-start server | Logs at critical points |
 | 3 | User reproduces | Runtime data collected |
-| 4 | Analyze logs | Hypothesis table |
+| 4 | Analyze logs (clear if retrying) | Hypothesis table |
 | 5 | Apply fix | Targeted code change |
-| 6 | User verifies | Post-fix logs |
+| 6 | Clear logs + user verifies | Post-fix logs |
 | 7 | Cleanup | Remove instrumentation |
