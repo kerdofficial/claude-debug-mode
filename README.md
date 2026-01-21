@@ -7,7 +7,7 @@ A hypothesis-based debugging skill for Claude Code, inspired by Cursor's Debug M
 ### From GitHub (recommended)
 
 ```bash
-/plugin marketplace add kerd/claude-debug-mode
+/plugin marketplace add kerdofficial/claude-debug-mode
 /plugin install claude-debug-mode@kerd-debug-mode
 ```
 

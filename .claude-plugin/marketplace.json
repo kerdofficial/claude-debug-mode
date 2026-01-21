@@ -2,7 +2,7 @@
   "name": "kerd-debug-mode",
   "description": "Hypothesis-based debugging plugin marketplace",
   "owner": {
-    "name": "kerd"
+    "name": "KerD"
   },
   "plugins": [
     {
