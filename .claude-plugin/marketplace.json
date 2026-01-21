@@ -1,8 +1,8 @@
 {
-  "name": "kerdofficial-claude-debug-mode",
+  "name": "kerd-debug-mode",
   "description": "Hypothesis-based debugging plugin marketplace",
   "owner": {
-    "name": "kerdofficial"
+    "name": "kerd"
   },
   "plugins": [
     {
