@@ -1,0 +1,18 @@
+{
+  "name": "kerdofficial-claude-debug-mode",
+  "description": "Hypothesis-based debugging plugin marketplace",
+  "owner": {
+    "name": "kerdofficial"
+  },
+  "plugins": [
+    {
+      "name": "claude-debug-mode",
+      "description": "Hypothesis-based debugging with runtime evidence - systematic bug identification and fixing",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "KerD"
+      }
+    }
+  ]
+}
